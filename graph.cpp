@@ -103,3 +103,7 @@ double GRAPH::getCost(){
 
     return totalCost;
 }
+
+double seconds() {
+    return 0;
+}

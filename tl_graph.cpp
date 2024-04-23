@@ -88,6 +88,13 @@ void CostSentitiveReassign(GRAPH &graph,
     
     std::unordered_map<int, int> reassign = createReassignment(failedPartitions, nodes);
     double Tlow = computeCost(graph, reassign);
+
+    //输出初始化结果
+    for(auto it = reassign.begin(); it != reassign.end(); ++it) {
+        std::cout << (it->first) << "---->" << (it->second) << std::endl;
+    }
+    std::cout << "Tlow = " << Tlow << std::endl;
+
     std::vector<Modification> Ls;
 
     while(true) {
@@ -113,7 +120,6 @@ void CostSentitiveReassign(GRAPH &graph,
                 idx = i;
             }
         }
-
         if(Ls[idx].cost < Tlow) {
             for(int j=0; j<=idx; ++j) {
                 for(auto it = Ls[j].map.begin(); it != Ls[j].map.end(); ++it) {
@@ -122,6 +128,12 @@ void CostSentitiveReassign(GRAPH &graph,
             }
 
             Tlow = Ls[idx].cost;
+
+            //输出更新结果
+            for(auto it = reassign.begin(); it != reassign.end(); ++it) {
+                std::cout << (it->first) << "---->" << (it->second) << std::endl;
+            }
+            std::cout << "Tlow = " << Tlow << std::endl;
         }
         else{
             break;
