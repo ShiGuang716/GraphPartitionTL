@@ -6,9 +6,6 @@
 #include <unordered_set>
 /*---------------------------------------------------------------------*/
 
-const int nodeNumber = 3;       //后面要改成通过命令行/文件输入的形式
-const int failedNodeId = 2;
-
 struct Edge{
     int targetPartitionId;//目标分区ID
     int sendMessageTimes ;//消息发送次数
@@ -24,14 +21,14 @@ struct Partition{
      * 静态成员函数，方便在没有实例化对象之前调用
     */
     static int getInitNodeId(int partitionId) {
-        return partitionId % nodeNumber;
+        return partitionId / 3;
     }
 
     /**
      * 判断partition是否是失效partition
     */
     static bool isFailedPartition(int partitionId) {
-        return partitionId % nodeNumber == failedNodeId;
+        return Partition::getInitNodeId(partitionId) == 0;
     }
 };
 
@@ -48,8 +45,10 @@ public:
     std::unordered_set<int> failedPartitions;   //失效分区
     std::unordered_set<int> nodes;              //可分配计算结点
 
+    int nodeNumber;                 //计算结点数
+
 public:
-    GRAPH(double c1=1.0, double c2=1.0) {
+    GRAPH(double c1, double c2, int nodeNumber):nodeNumber(nodeNumber) {
         perCalcCost = c1, perMesCost = c2;
     }
 

@@ -20,18 +20,22 @@ double computeCost(GRAPH& graph, std::unordered_map<int, int> reassign) {
 
 std::unordered_map<int, int> createReassignment(std::unordered_set<int> failedPartitions, std::unordered_set<int> nodes) {
     std::unordered_map<int, int> reassign;
-    std::vector<int> nodesArray(nodes.begin(), nodes.end());
+    // std::vector<int> nodesArray(nodes.begin(), nodes.end());
 
-    std::random_device rd;
-    std::mt19937 gen(rd());
-    std::uniform_int_distribution<> dis(0, nodes.size()-1);
+    // std::random_device rd;
+    // std::mt19937 gen(rd());
+    // std::uniform_int_distribution<> dis(0, nodes.size()-1);
 
-    for(int P : failedPartitions) {
-        int randomIdx = dis(gen);
-        int randomNode = nodesArray[randomIdx];
+    // for(int P : failedPartitions) {
+    //     int randomIdx = dis(gen);
+    //     int randomNode = nodesArray[randomIdx];
 
-        reassign[P] = randomNode;
-    }
+    //     reassign[P] = randomNode;
+    // }
+
+    reassign[0] = 1;
+    reassign[1] = 0;
+    reassign[2] = 0;
 
     return reassign;
 }
@@ -46,12 +50,12 @@ Modification nextChange(GRAPH &graph,
 
     for(int P : failedPartitions) {
         for(int _P : failedPartitions) {
-            if(P == _P)     continue;
+            if(P == _P || reassign[P]== reassign[_P])     continue;
             std::unordered_map<int, int> _reassign(reassign);
             _reassign[P] = reassign[_P];
             _reassign[_P] = reassign[P];
 
-            double t = computeCost(graph, reassign);
+            double t = computeCost(graph, _reassign);
 
             if(L.cost > t) {
                 L.map.clear();
@@ -67,7 +71,7 @@ Modification nextChange(GRAPH &graph,
             std::unordered_map<int, int> _reassign(reassign);
             _reassign[P] = N;
 
-            double t = computeCost(graph, reassign);
+            double t = computeCost(graph, _reassign);
         
             if(L.cost > t) {
                 L.map.clear();
@@ -120,6 +124,7 @@ void CostSentitiveReassign(GRAPH &graph,
                 idx = i;
             }
         }
+
         if(Ls[idx].cost < Tlow) {
             for(int j=0; j<=idx; ++j) {
                 for(auto it = Ls[j].map.begin(); it != Ls[j].map.end(); ++it) {

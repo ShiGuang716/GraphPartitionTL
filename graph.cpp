@@ -58,6 +58,16 @@ void GRAPH::read(char* filename){
     for(int i=0; i<V1; ++i) {
         this->nodes.insert(initPar2node[i]);
     }
+
+    //输出读取的图结构
+    // for(const auto& partition : partitions) {
+    //     std::cout<<partition.Id<<" "<<partition.calcTimes<<"   ";
+
+    //     for(const auto& edge: partition.edges){
+    //         std::cout<<edge.targetPartitionId<<" "<<edge.sendMessageTimes<<"  ";
+    //     }
+    //     std::cout<<std::endl;
+    // }
 }
 
 double GRAPH::getCost(){
@@ -98,6 +108,8 @@ double GRAPH::getCost(){
 
     //获取各个node计算次数的最大值，作为总计算次数
     totalCalcTimes = *std::max_element(perNodeCalcTimes.begin(), perNodeCalcTimes.end());
+
+    //std::cout << perCalcCost*totalCalcTimes << "+" << perMesCost*totalMesTimes<<std::endl;
 
     double totalCost = perMesCost*totalMesTimes + perCalcCost*totalCalcTimes;
 
