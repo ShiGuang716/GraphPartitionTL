@@ -7,7 +7,15 @@
 #include <algorithm>
 /*------------------------------------------------------------*/
 
-void GRAPH::read(char* filename){
+/**
+ * 文件构成：
+ * [partitionID,calcTimes,[[targetPartitionID,messageTimes],[targetPartitionID,messageTimes]...]]
+ * 
+ * 例：
+ * [0,1,[[1,1],[3,3]]]
+ * [1,0,[[0,1],[2,2],[3,1]]]
+ */
+void GRAPH::read(std::string filename){
     std::ifstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filename << std::endl;
@@ -40,80 +48,56 @@ void GRAPH::read(char* filename){
         this->partitions.push_back({partitionId, calcTimes, edges});
     }
 
-    this->V1 = this->partitions.size();
-    this->initPar2node = std::vector<int>(this->V1);
-    //初始化partitionId到nodeId的映射
-    for(int i=0; i<V1; ++i) {
-        initPar2node[i] = Partition::getInitNodeId(i);
-    }
-
-    //保存失效分区Id到变量failedPartitions中
-    for(const auto& P : this->partitions) {
-        if(Partition::isFailedPartition(P.Id)) {
-            this->failedPartitions.insert(P.Id);
-        }
-    }
-
-    //默认所有计算结点都是可分配计算结点
-    for(int i=0; i<V1; ++i) {
-        this->nodes.insert(initPar2node[i]);
-    }
-
-    //输出读取的图结构
-    // for(const auto& partition : partitions) {
-    //     std::cout<<partition.Id<<" "<<partition.calcTimes<<"   ";
-
-    //     for(const auto& edge: partition.edges){
-    //         std::cout<<edge.targetPartitionId<<" "<<edge.sendMessageTimes<<"  ";
-    //     }
-    //     std::cout<<std::endl;
-    // }
+    //printGraph();
 }
 
-double GRAPH::getCost(){
-    int totalMesTimes = 0, totalCalcTimes = 0;
-    std::vector<int> perNodeCalcTimes(nodeNumber);  //各个node上的总计算代价
-    //遍历所有分区
-    for(const auto & partition : this->partitions) {
-        //如果该partition是失效partition，将其计算成本计入代价中
-        if(Partition::isFailedPartition(partition.Id)){
-            perNodeCalcTimes[par2node[partition.Id]] += partition.calcTimes;
+int GRAPH::getCalcTimes(const std::vector<int>& par2node, int nodeNumber) {
+    int totalCalcTimes = 0;
+    std::vector<int> perNodeCalcTimes(nodeNumber);      //各个节点上的总计算次数
+
+    for(const auto & partition: partitions) {
+        if(isFailed(partition.Id, nodeNumber)){
+            int nodeId = par2node[partition.Id];
+            perNodeCalcTimes[nodeId] += partition.calcTimes;
         }
+    }
+    totalCalcTimes = *std::max_element(perNodeCalcTimes.begin(), perNodeCalcTimes.end());
 
-        //若src和dest在同一node上，通信次数为0。否则：
-        //若src为未失效分区，dest为未失效分区，通信次数为0
-        //若src为未失效分区，dest为失效分区，通信次数为边权值
-        //若src为失效分区，dest为未失效分区，通信次数为1
-        //若src为失效分区，dest为失效分区，通信次数为边权值
+    return totalCalcTimes;
+}
 
-        bool isSrcFailed = Partition::isFailedPartition(partition.Id);
-        bool isDestFailed;
-        for(const auto& edge: partition.edges) {
+int GRAPH::getMesTimes(const std::vector<int>& par2node, int nodeNumber) {
+    int totalMesTimes = 0;
+
+    for(const auto& P : partitions) {
+        for(const auto& edge : P.edges) {
             //如果两个分区在同一个node上，通信次数为0
-            //TODO()    如果partitionId和partitions数组的下标不对应，这里需要修改！！
-            if(par2node[partition.Id] == par2node[partitions[edge.targetPartitionId].Id])
-                continue;
-            
-            isDestFailed = Partition::isFailedPartition(edge.targetPartitionId);
-            
-            if(isDestFailed){
+            int srcNode = par2node[P.Id];
+            int destNode = par2node[edge.targetPartitionId];
+            if(srcNode == destNode) continue;
+
+            //若dest为未失效分区，通信次数为0
+            //若dest为失效分区，通信次数为边的权值
+            if(isFailed(edge.targetPartitionId, nodeNumber)) {
                 totalMesTimes += edge.sendMessageTimes;
             }
-            else if(isSrcFailed){
-                totalMesTimes += 1;
-            }
-
         }
     }
 
-    //获取各个node计算次数的最大值，作为总计算次数
-    totalCalcTimes = *std::max_element(perNodeCalcTimes.begin(), perNodeCalcTimes.end());
+    return totalMesTimes;
+}
 
-    //std::cout << perCalcCost*totalCalcTimes << "+" << perMesCost*totalMesTimes<<std::endl;
+void GRAPH::printGraph(){
+    //输出读取的图结构
+    for(const auto& partition : partitions) {
+        printf("[%d,%d,[", partition.Id, partition.calcTimes);
 
-    double totalCost = perMesCost*totalMesTimes + perCalcCost*totalCalcTimes;
+        for(const auto& edge: partition.edges){
+            printf("[%d,%d],", edge.targetPartitionId, edge.sendMessageTimes);
+        }
 
-    return totalCost;
+        printf("]]\n");
+    }
 }
 
 double seconds() {
